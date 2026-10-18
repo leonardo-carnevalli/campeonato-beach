@@ -1,0 +1,1 @@
+{"root":["./src/main.tsx","./src/admin/admin.tsx","./src/admin/campeonato.tsx","./src/lib/dados.ts","./src/lib/motor.ts","./src/marcador/marcador.tsx","./src/publico/jogopublico.tsx","./src/publico/publico.tsx","./src/ui/jogo.tsx","./src/ui/ui.tsx"],"version":"6.0.3"}

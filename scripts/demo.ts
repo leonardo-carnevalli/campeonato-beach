@@ -1,5 +1,5 @@
 // Cria um campeonato de exemplo com jogos encerrados e um jogo ao vivo.
-// node --experimental-strip-types scripts/demo.ts <senha-admin>
+// node --experimental-strip-types scripts/demo.ts <senha-admin> <senha-do-marcador>
 import { readFileSync } from 'node:fs'
 import { jogosDosGrupos, montarChave, origensDosGrupos, REGRAS_PADRAO, type Categoria, type Time } from '../src/lib/motor.ts'
 
@@ -24,7 +24,7 @@ const camp = await salvar('campeonatos', {
   nome: 'Copa Verão de Beach Vôlei', slug: 'copa-verao', local: 'Arena Beach Center',
   data_inicio: '2026-10-24', data_fim: '2026-10-25', descricao: 'Exemplo para testar o sistema.',
 })
-await rpc('admin_senha_marcador', { p_senha: SENHA, p_campeonato: camp.id, p_nova: 'marca123' })
+await rpc('admin_senha_marcador', { p_senha: SENHA, p_campeonato: camp.id, p_nova: process.argv[3] ?? 'troque-esta-senha' })
 
 const NOMES_D = ['Rafa / Léo', 'Bruno / Thiago', 'Caio / Igor', 'Duda / Pedro', 'Gabriel / Vini', 'Lucas / Matheus', 'André / Felipe', 'Diego / Renan']
 const NOMES_Q = ['Areia Fina: Ana, Bia, Carla, Dani', 'Pé na Areia: Edu, Fê, Gui, Helô', 'Sol e Rede: Ivo, Jú, Kadu, Lia', 'Maré Alta: Malu, Nando, Olívia, Paulo']

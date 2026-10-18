@@ -1,0 +1,5 @@
+.segredos
+public/_*.html
+supabase/.temp
+node_modules
+dist

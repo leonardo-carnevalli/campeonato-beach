@@ -5,3 +5,5 @@ dist
 .vercel
 supabase/.temp
 public/_*.html
+
+.vercel
