@@ -1,15 +1,16 @@
-import { useLances, useCampeonato } from '../lib/dados'
-import { NOME_FUNDAMENTO, calcularPlacar, placarDoSetAtual, regrasDoJogo, type Lado } from '../lib/motor'
+import { useLances, useCampeonato, useNoite } from '../lib/dados'
+import { NOME_FUNDAMENTO, atletaDaPartida, calcularPlacar, placarDoSetAtual, resumoDestaque, regrasDoJogo, type Lado } from '../lib/motor'
 import { BotaoArte, BotaoSeguir } from './extras'
 import { useTema } from '../temas'
 import { CreditoVetor } from '../ui/Vetor'
-import { AoVivo, Carregando, Topo, Vazio, cx } from '../ui/ui'
+import { AoVivo, BotaoNoite, Carregando, Topo, Vazio, cx } from '../ui/ui'
 import { hora, ladosDoJogo, nomeDaFase } from '../ui/jogo'
 
 export function JogoPublico({ slug, id }: { slug: string; id: string }) {
   const { tudo } = useCampeonato({ slug })
   const { lances } = useLances(id)
   useTema(slug)
+  const { noite, alternar } = useNoite()
   if (tudo === undefined) return <Carregando />
   const jogo = tudo?.jogos.find((j) => j.id === id)
   if (!tudo || !jogo) return <div className="p-6"><Vazio>Jogo não encontrado.</Vazio></div>
@@ -19,6 +20,7 @@ export function JogoPublico({ slug, id }: { slug: string; id: string }) {
   const atual = placarDoSetAtual(p)
   const nomeAtleta = (aid: string | null) => tudo.atletas.find((x) => x.id === aid)?.nome
   const atletasDe = (tid?: string) => tudo.atletas.filter((x) => x.time_id === tid)
+  const destaque = jogo.status === 'encerrado' && !jogo.wo ? atletaDaPartida({ ...jogo, time_a: a?.id ?? null, time_b: b?.id ?? null }, lances, tudo.atletas) : null
 
   const lado = (l: Lado) => {
     const t = l === 'a' ? a : b
@@ -43,7 +45,7 @@ export function JogoPublico({ slug, id }: { slug: string; id: string }) {
 
   return (
     <div className="mx-auto max-w-3xl pb-16">
-      <Topo titulo={`${cat.nome} · ${nomeDaFase(jogo)}`} sub={[jogo.quadra && `Quadra ${jogo.quadra}`, hora(jogo.horario)].filter(Boolean).join(' · ')} voltar={`/c/${slug}`} />
+      <Topo titulo={`${cat.nome} · ${nomeDaFase(jogo)}`} sub={[jogo.quadra && `Quadra ${jogo.quadra}`, hora(jogo.horario)].filter(Boolean).join(' · ')} voltar={`/c/${slug}`} direita={<BotaoNoite noite={noite} alternar={alternar} />} />
       <div className="bg-mar px-4 pb-6 pt-5 text-white">
         <div className="mb-4 flex justify-center">
           {jogo.status === 'ao_vivo' ? <AoVivo /> : (
@@ -77,8 +79,20 @@ export function JogoPublico({ slug, id }: { slug: string; id: string }) {
       </div>
 
       <div className="space-y-5 px-3 pt-5">
+        {destaque && (
+          <section className="sobe flex items-center gap-4 overflow-hidden rounded-2xl bg-cartao p-4">
+            <div className="placar grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-sol text-3xl text-tinta">{destaque.pontos}</div>
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-bold text-mar">Atleta da partida</div>
+              <div className="largo truncate text-xl font-extrabold leading-tight">{destaque.atleta.nome}</div>
+              <div className="truncate text-sm text-cinza">
+                {tudo.times.find((t) => t.id === destaque.atleta.time_id)?.nome}, {resumoDestaque(destaque)}
+              </div>
+            </div>
+          </section>
+        )}
         {jogo.status === 'encerrado' && a && b && (
-          <BotaoArte camp={tudo.camp} base={tudo} arte={{ tipo: 'resultado', jogo }} rotulo="Imagem do resultado para o Instagram" />
+          <BotaoArte camp={tudo.camp} base={tudo} arte={{ tipo: 'resultado', jogo, destaque }} rotulo="Imagem do resultado para o Instagram" />
         )}
         {(a || b) && (
           <section className="grid grid-cols-2 gap-2">

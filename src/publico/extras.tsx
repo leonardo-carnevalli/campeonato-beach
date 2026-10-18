@@ -3,7 +3,7 @@ import { Link } from 'wouter'
 import QRCode from 'qrcode'
 import { Download, Share2, Star } from 'lucide-react'
 import { useSeguidos } from '../lib/dados'
-import { calcularPlacar, placarDoSetAtual, quadrasDoDia, regrasDoJogo, type Campeonato, type Jogo, type Patrocinador, type Time } from '../lib/motor'
+import { calcularPlacar, placarDoSetAtual, quadrasDoDia, regrasDoJogo, resumoDestaque, type Destaque, type Campeonato, type Jogo, type Patrocinador, type Time } from '../lib/motor'
 import { Botao, Folha, aviso, cx } from '../ui/ui'
 import { hora, ladosDoJogo, nomeDaFase, type Base } from '../ui/jogo'
 import { temaDe } from '../temas'
@@ -203,7 +203,7 @@ function retangulo(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
 }
 
 type Arte =
-  | { tipo: 'resultado'; jogo: Jogo }
+  | { tipo: 'resultado'; jogo: Jogo; destaque?: Destaque | null }
   | { tipo: 'campeao'; time: Time; categoria: string }
 
 // story 1080x1920 no azul da bola, com placar ou campeão e os patrocinadores
@@ -278,7 +278,19 @@ export async function gerarArte(camp: Campeonato, base: Base & { patrocinadores:
     linha(b, p.setsB, jogo.vencedor === 'b', topo + 480)
     ctx.fillStyle = '#56627a'
     ctx.font = `600 40px ${FONTE}`
-    ctx.fillText(jogo.wo ? 'Vitória por W.O.' : jogo.sets.map(([x, y2]) => `${x}-${y2}`).join('   '), 140, topo + 660)
+    ctx.fillText(jogo.wo ? 'Vitória por W.O.' : jogo.sets.map(([x, y2]) => `${x}-${y2}`).join('   '), 140, arte.destaque ? topo + 600 : topo + 660)
+    if (arte.destaque) {
+      ctx.fillStyle = '#e8edf6'
+      retangulo(ctx, 100, topo + 640, W - 200, 90, 22)
+      ctx.fillStyle = '#56627a'
+      ctx.font = `600 30px ${FONTE}`
+      ctx.fillText('Atleta da partida', 140, topo + 695)
+      ctx.fillStyle = '#0a1a3f'
+      ctx.font = `800 40px ${FONTE}`
+      ctx.textAlign = 'right'
+      ctx.fillText(`${arte.destaque.atleta.nome}, ${resumoDestaque(arte.destaque)}`, W - 140, topo + 698, 600)
+      ctx.textAlign = 'left'
+    }
   } else {
     ctx.fillStyle = '#0b48c9'
     ctx.font = `700 44px ${FONTE}`

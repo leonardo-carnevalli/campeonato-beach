@@ -1,6 +1,6 @@
 import { useEffect, useState, type ButtonHTMLAttributes, type ReactNode } from 'react'
 import { Link } from 'wouter'
-import { ChevronLeft, X } from 'lucide-react'
+import { ChevronLeft, Moon, Sun, X } from 'lucide-react'
 
 export function cx(...c: (string | false | null | undefined)[]) {
   return c.filter(Boolean).join(' ')
@@ -146,4 +146,17 @@ export function AoVivo({ pequeno }: { pequeno?: boolean }) {
 
 export function confirmar(texto: string) {
   return window.confirm(texto)
+}
+
+export function BotaoNoite({ noite, alternar }: { noite: boolean; alternar: () => void }) {
+  return (
+    <button
+      onClick={alternar}
+      className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-cinza transition active:scale-90 active:bg-linha"
+      aria-label={noite ? 'Usar modo claro' : 'Usar modo noite'}
+      title={noite ? 'Modo claro' : 'Modo noite'}
+    >
+      {noite ? <Sun size={19} /> : <Moon size={19} />}
+    </button>
+  )
 }

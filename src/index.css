@@ -176,3 +176,37 @@ body {
 .telao-corre {
   animation: telao-corre 40s linear infinite;
 }
+
+/* modo noite do público: fundo escuro, sem ofuscar. !important vence as cores do tema do cliente. */
+:root[data-noite] {
+  --color-areia: #0a0f1a !important;
+  --color-cartao: #131b2b !important;
+  --color-linha: #222d42 !important;
+  --color-cinza: #95a2b8 !important;
+  --color-mar-claro: #17264a !important;
+  --color-sol-claro: #3a3214 !important;
+  color-scheme: dark;
+}
+:root[data-noite] body {
+  color: #e6ebf3;
+}
+:root[data-noite] .text-tinta {
+  color: #e6ebf3;
+}
+/* no amarelo o texto continua escuro */
+:root[data-noite] .bg-sol.text-tinta,
+:root[data-noite] .bg-sol .text-tinta,
+:root[data-noite] .bg-white .text-tinta,
+:root[data-noite] .bg-white.text-tinta {
+  color: var(--color-tinta);
+}
+:root[data-noite] .bg-tinta {
+  background-color: #1d2942;
+}
+:root[data-noite] .text-mar {
+  filter: brightness(1.7) saturate(0.9);
+}
+:root[data-noite] img[src$='.svg'][alt=''],
+:root[data-noite] .bg-cartao img {
+  filter: none;
+}

@@ -113,3 +113,15 @@ ok('folga na chave', () => {
 })
 
 console.log(`\n${n} testes passaram`)
+
+import { atletaDaPartida } from '../src/lib/motor.ts'
+ok('atleta da partida', () => {
+  const at = [{ id: 'x', time_id: 'ta', nome: 'Ana', ordem: 0 }, { id: 'y', time_id: 'tb', nome: 'Bia', ordem: 0 }]
+  const j = base({ time_a: 'ta', time_b: 'tb', vencedor: 'b', status: 'encerrado' })
+  const l = (atleta_id: string, tipo: 'ponto' | 'erro', fundamento: 'ace' | null = null) =>
+    ({ id: 1, jogo_id: j.id, set_num: 1, lado: 'a' as const, tipo, atleta_id, fundamento, criado_em: '' })
+  // empate em pontos: Ana errou mais, então é a Bia
+  const d = atletaDaPartida(j, [l('x', 'ponto'), l('x', 'ponto', 'ace'), l('x', 'erro'), l('y', 'ponto'), l('y', 'ponto')], at)
+  assert.equal(d?.atleta.nome, 'Bia')
+  assert.equal(atletaDaPartida(j, [], at), null)
+})

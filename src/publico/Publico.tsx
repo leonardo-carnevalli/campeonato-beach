@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useSearchParams } from 'wouter'
 import { Share2, Tv } from 'lucide-react'
-import { estatisticas, sb, useCampeonato, useSeguidos } from '../lib/dados'
+import { estatisticas, sb, useCampeonato, useNoite, useSeguidos } from '../lib/dados'
 import {
   classificar, fasesMata, gruposDa, saldoPontos, saldoSets, NOME_FASE,
   type Campeonato, type Categoria, type Jogo,
 } from '../lib/motor'
-import { Abas, Carregando, Vazio, cx } from '../ui/ui'
+import { Abas, BotaoNoite, Carregando, Vazio, cx } from '../ui/ui'
 import { CartaoJogo, ladosDoJogo, type Base } from '../ui/jogo'
 import { BotaoArte, BotaoSeguir, Compartilhar, Instalar, Patrocinadores, Quadras, instalado, ultimoCampeonato } from './extras'
 import { CreditoVetor } from '../ui/Vetor'
@@ -57,6 +57,7 @@ export function Publico({ slug }: { slug: string }) {
   const [busca, setBusca] = useSearchParams()
   const [compartilhando, setCompartilhando] = useState(false)
   const tema = useTema(slug)
+  const { noite, alternar } = useNoite()
   const aba = (busca.get('aba') as Aba) || 'jogos'
   const catId = busca.get('cat') || ''
   const mudar = (k: string, v: string) =>
@@ -99,7 +100,10 @@ export function Publico({ slug }: { slug: string }) {
       </header>}
 
       <div className="sticky top-0 z-10 space-y-2 border-b border-linha bg-cartao/95 px-3 pt-1 pb-2.5 backdrop-blur">
-        <Abas abas={abas} atual={aba} mudar={(a) => mudar('aba', a)} />
+        <div className="flex items-center gap-1">
+          <div className="min-w-0 flex-1"><Abas abas={abas} atual={aba} mudar={(a) => mudar('aba', a)} /></div>
+          <BotaoNoite noite={noite} alternar={alternar} />
+        </div>
         {categorias.length > 1 && (
           <div className="sem-barra -mx-3 flex gap-1.5 overflow-x-auto px-3">
             {(aba === 'jogos' || aba === 'atletas') && (
@@ -230,7 +234,7 @@ export function Tabela({ base, cat, seguir }: { base: Base; cat: Categoria; segu
                     </td>
                     <td className="max-w-0 py-1 pr-1">
                       <div className="flex items-center">
-                        <span className="min-w-0 flex-1 truncate font-semibold">{l.time.nome}</span>
+                        <span className="min-w-0 flex-1 font-semibold leading-tight">{l.time.nome}</span>
                         {seguir && <BotaoSeguir time={l.time} pequeno />}
                       </div>
                     </td>

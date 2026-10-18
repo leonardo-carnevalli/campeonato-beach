@@ -175,3 +175,30 @@ export function useSeguidos() {
   }
   return { ids, segue: (id?: string) => !!id && ids.includes(id), alternar }
 }
+
+// modo noite do público (lembrado neste aparelho; na primeira vez segue o celular)
+export function useNoite(ligado = true) {
+  const [noite, setNoite] = useState(() => {
+    try {
+      const salvo = localStorage.getItem('beach:noite')
+      if (salvo) return salvo === 'sim'
+    } catch { /* sem armazenamento */ }
+    return matchMedia('(prefers-color-scheme: dark)').matches
+  })
+  useEffect(() => {
+    if (!ligado) return
+    const raiz = document.documentElement
+    if (noite) raiz.setAttribute('data-noite', '')
+    else raiz.removeAttribute('data-noite')
+    return () => raiz.removeAttribute('data-noite')
+  }, [noite, ligado])
+  const alternar = () => {
+    setNoite((n) => {
+      try {
+        localStorage.setItem('beach:noite', n ? 'nao' : 'sim')
+      } catch { /* sem armazenamento */ }
+      return !n
+    })
+  }
+  return { noite, alternar }
+}

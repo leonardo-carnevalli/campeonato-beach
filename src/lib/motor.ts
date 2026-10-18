@@ -528,3 +528,43 @@ export function quadrasDoDia(jogos: Jogo[]): Quadra[] {
 export function placarDoSetAtual(p: Placar): [number, number] {
   return p.sets[p.setAtual - 1] ?? [0, 0]
 }
+
+// ---------- atleta da partida ----------
+
+export interface Destaque {
+  atleta: Atleta
+  pontos: number
+  erros: number
+  aces: number
+  bloqueios: number
+  ataques: number
+}
+
+// quem mais pontuou; no empate, menos erros e depois quem venceu
+export function atletaDaPartida(jogo: Jogo, lances: Lance[], atletas: Atleta[]): Destaque | null {
+  const venc = jogo.vencedor === 'a' ? jogo.time_a : jogo.vencedor === 'b' ? jogo.time_b : null
+  const conta = new Map<string, Destaque>()
+  for (const l of lances) {
+    const a = l.atleta_id ? atletas.find((x) => x.id === l.atleta_id) : undefined
+    if (!a) continue
+    const d = conta.get(a.id) ?? { atleta: a, pontos: 0, erros: 0, aces: 0, bloqueios: 0, ataques: 0 }
+    if (l.tipo === 'ponto') {
+      d.pontos++
+      if (l.fundamento === 'ace') d.aces++
+      if (l.fundamento === 'bloqueio') d.bloqueios++
+      if (l.fundamento === 'ataque') d.ataques++
+    }
+    if (l.tipo === 'erro') d.erros++
+    conta.set(a.id, d)
+  }
+  const lista = [...conta.values()].filter((d) => d.pontos > 0)
+  lista.sort((x, y) => y.pontos - x.pontos || x.erros - y.erros || Number(y.atleta.time_id === venc) - Number(x.atleta.time_id === venc))
+  return lista[0] ?? null
+}
+
+export function resumoDestaque(d: Destaque): string {
+  const partes = [`${d.pontos} ${d.pontos === 1 ? 'ponto' : 'pontos'}`]
+  if (d.aces) partes.push(`${d.aces} ${d.aces === 1 ? 'ace' : 'aces'}`)
+  if (d.bloqueios) partes.push(`${d.bloqueios} ${d.bloqueios === 1 ? 'bloqueio' : 'bloqueios'}`)
+  return partes.join(', ')
+}
