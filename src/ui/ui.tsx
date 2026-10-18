@@ -137,8 +137,8 @@ export function Avisos() {
 
 export function AoVivo({ pequeno }: { pequeno?: boolean }) {
   return (
-    <span className={cx('inline-flex items-center gap-1.5 font-bold uppercase tracking-wide text-vivo', pequeno ? 'text-[11px]' : 'text-xs')}>
-      <span className="pulso h-2 w-2 rounded-full bg-vivo" />
+    <span className={cx('inline-flex items-center gap-1.5 rounded-full bg-vivo px-2.5 py-1 font-bold text-white', pequeno ? 'text-[11px]' : 'text-xs')}>
+      <span className="pulso h-1.5 w-1.5 rounded-full bg-white" />
       Ao vivo
     </span>
   )

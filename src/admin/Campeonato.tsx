@@ -12,6 +12,7 @@ import { CartaoJogo, ladosDoJogo, nomeDaFase } from '../ui/jogo'
 import { Tabela } from '../publico/Publico'
 import { LinkExterno, slugDe, useAdmin } from './Admin'
 import { EntrarComSenha } from '../marcador/Marcador'
+import { AdminDivulgar, AdminPatrocinadores } from './Patrocinadores'
 
 type Aba = 'categorias' | 'times' | 'tabela' | 'jogos' | 'ajustes'
 
@@ -672,13 +673,8 @@ function Ajustes({ tudo, recarregar }: Omit<P, 'cat'> & { cat?: Categoria }) {
   const url = (p: string) => `${location.origin}${p}`
   return (
     <div className="space-y-4">
-      <section className="space-y-3 rounded-2xl bg-cartao p-4">
-        <h2 className="font-bold">Links</h2>
-        <div className="space-y-1 text-sm">
-          <div>Público: <LinkExterno href={`/c/${c.slug}`}>{url(`/c/${c.slug}`)}</LinkExterno></div>
-          <div>Marcador: <LinkExterno href={`/marcador/${c.id}`}>{url(`/marcador/${c.id}`)}</LinkExterno></div>
-        </div>
-      </section>
+      <AdminDivulgar tudo={tudo} />
+      <AdminPatrocinadores tudo={tudo} recarregar={recarregar} />
 
       <section className="space-y-3 rounded-2xl bg-cartao p-4">
         <h2 className="font-bold">Senha do marcador</h2>

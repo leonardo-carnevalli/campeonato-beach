@@ -53,6 +53,8 @@ export function CartaoJogo({ jogo, base, href, mostrarCategoria }: { jogo: Jogo;
   const fim = jogo.status === 'encerrado'
   const folga = ehFolga(jogo)
 
+  const setsVisiveis: [number, number][] = vivo && p.setAtual > jogo.sets.length ? [...jogo.sets, [0, 0]] : jogo.sets
+
   const linha = (lado: Lado) => {
     const t = lado === 'a' ? a : b
     const rot = lado === 'a' ? rotuloA : rotuloB
@@ -68,13 +70,14 @@ export function CartaoJogo({ jogo, base, href, mostrarCategoria }: { jogo: Jogo;
           )}
         </div>
         <div className="flex items-center gap-1">
-          {jogo.sets.map((s, i) => {
-            const atual = vivo && i === jogo.sets.length - 1
+          {setsVisiveis.map((s, i) => {
+            const atual = vivo && i === p.setAtual - 1
             return (
               <span
-                key={i}
+                key={atual ? `${i}-${s[lado === 'a' ? 0 : 1]}` : i}
                 className={cx(
                   'placar w-7 text-center text-lg',
+                  atual && 'vira',
                   atual ? 'text-tinta' : 'text-cinza',
                   !atual && s[lado === 'a' ? 0 : 1] > s[lado === 'a' ? 1 : 0] && 'text-tinta',
                 )}

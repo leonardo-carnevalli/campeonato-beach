@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import '@fontsource-variable/archivo/wdth.css';
+@import '@fontsource-variable/archivo/wdth-italic.css';
 
 @theme {
   --font-sans: 'Archivo Variable', system-ui, sans-serif;
@@ -89,4 +90,80 @@ body {
     font: inherit;
     color: inherit;
   }
+}
+
+/* telão: troca de painel e barra de tempo */
+@keyframes telao-entra {
+  from { opacity: 0; transform: translateY(1.2em) }
+  to { opacity: 1; transform: none }
+}
+.telao-entra {
+  animation: telao-entra 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+@keyframes telao-barra {
+  from { width: 0 }
+  to { width: 100% }
+}
+.telao-barra {
+  animation: telao-barra 12s linear;
+}
+
+/* número que acabou de mudar sobe no lugar */
+@keyframes vira {
+  0% { transform: translateY(45%); opacity: 0 }
+  100% { transform: none; opacity: 1 }
+}
+.vira {
+  display: inline-block;
+  animation: vira 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* abertura da página da Arena Vixe: pinceladas varrem, escudo cai, título entra */
+@keyframes vixe-varre {
+  from { clip-path: inset(0 100% 0 0) }
+  to { clip-path: inset(0 0 0 0) }
+}
+.vixe-varre {
+  animation: vixe-varre 0.7s cubic-bezier(0.6, 0, 0.2, 1) both;
+}
+@keyframes vixe-escudo {
+  0% { transform: translateY(-30px) scale(0.85); opacity: 0 }
+  60% { transform: translateY(4px) scale(1.03); opacity: 1 }
+  100% { transform: none }
+}
+.vixe-escudo {
+  animation: vixe-escudo 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) 0.15s both;
+}
+@keyframes vixe-titulo {
+  from { transform: translateX(-24px) skewX(-8deg); opacity: 0 }
+  to { transform: none; opacity: 1 }
+}
+.vixe-titulo {
+  animation: vixe-titulo 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) 0.25s both;
+}
+.vixe-sobe {
+  animation: sobe 0.5s ease-out both;
+}
+
+/* telão: brilho suave na quadra quando sai ponto */
+@keyframes telao-brilho {
+  0% { opacity: 0 }
+  15% { opacity: 1 }
+  100% { opacity: 0 }
+}
+.telao-brilho {
+  animation: telao-brilho 1.6s ease-out forwards;
+}
+/* linhas de quadra quase invisíveis no fundo */
+.telao-fundo::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 80% at 50% 120%, rgba(255, 255, 255, 0.06), transparent 60%);
+}
+.telao-fundo {
+  isolation: isolate;
 }

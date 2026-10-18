@@ -1,16 +1,24 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useSearchParams } from 'wouter'
-import { Share2 } from 'lucide-react'
-import { estatisticas, sb, useCampeonato } from '../lib/dados'
+import { Link, useLocation, useSearchParams } from 'wouter'
+import { Share2, Tv } from 'lucide-react'
+import { estatisticas, sb, useCampeonato, useSeguidos } from '../lib/dados'
 import {
   classificar, fasesMata, gruposDa, saldoPontos, saldoSets, NOME_FASE,
   type Campeonato, type Categoria, type Jogo,
 } from '../lib/motor'
-import { Abas, Carregando, Vazio, cx, aviso } from '../ui/ui'
+import { Abas, Carregando, Vazio, cx } from '../ui/ui'
 import { CartaoJogo, ladosDoJogo, type Base } from '../ui/jogo'
+import { BotaoArte, BotaoSeguir, Compartilhar, Instalar, Patrocinadores, Quadras, instalado, ultimoCampeonato } from './extras'
+import { CreditoVetor } from '../ui/Vetor'
+import { useTema } from '../temas'
 
 export function Inicio() {
   const [lista, setLista] = useState<Campeonato[] | null>(null)
+  const [, navegar] = useLocation()
+  useEffect(() => {
+    const ultimo = ultimoCampeonato()
+    if (instalado() && ultimo) navegar(`/c/${ultimo}`, { replace: true })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     sb.from('campeonatos').select('*').order('data_inicio', { ascending: false }).then(({ data }) => setLista(data ?? []))
   }, [])
@@ -37,26 +45,18 @@ export function Inicio() {
           ))}
         </div>
       )}
-      <Rodape />
+      <CreditoVetor />
     </div>
   )
 }
 
-export function Rodape() {
-  return (
-    <footer className="mt-16 flex items-center justify-center gap-4 text-xs text-cinza">
-      <span>Sistema Vetor</span>
-      <Link href="/marcador" className="underline-offset-2 hover:underline">Marcador</Link>
-      <Link href="/admin" className="underline-offset-2 hover:underline">Organização</Link>
-    </footer>
-  )
-}
-
-type Aba = 'jogos' | 'tabela' | 'chave' | 'atletas'
+type Aba = 'jogos' | 'tabela' | 'chave' | 'atletas' | 'torneio'
 
 export function Publico({ slug }: { slug: string }) {
   const { tudo, erro } = useCampeonato({ slug })
   const [busca, setBusca] = useSearchParams()
+  const [compartilhando, setCompartilhando] = useState(false)
+  const tema = useTema(slug)
   const aba = (busca.get('aba') as Aba) || 'jogos'
   const catId = busca.get('cat') || ''
   const mudar = (k: string, v: string) =>
@@ -79,21 +79,13 @@ export function Publico({ slug }: { slug: string }) {
   if (temGrupo) abas.push(['tabela', 'Classificação'])
   if (temChave) abas.push(['chave', 'Chave'])
   abas.push(['atletas', 'Atletas'])
+  if (tema?.cartaz) abas.push(['torneio', 'Torneio'])
 
-  const compartilhar = async () => {
-    const url = location.origin + `/c/${camp.slug}`
-    try {
-      if (navigator.share) await navigator.share({ title: camp.nome, url })
-      else {
-        await navigator.clipboard.writeText(url)
-        aviso('Link copiado')
-      }
-    } catch { /* cancelou */ }
-  }
+  const compartilhar = () => setCompartilhando(true)
 
   return (
     <div className="mx-auto max-w-3xl pb-16">
-      <header className="relative overflow-hidden bg-mar px-4 pb-6 pt-8 text-white">
+      {tema?.Topo ? tema.Topo({ camp, categorias, compartilhar }) : <header className="relative overflow-hidden bg-mar px-4 pb-6 pt-8 text-white">
         <Bola className="pointer-events-none absolute -right-20 -top-10 h-64 w-64 opacity-95" />
         <div className="relative max-w-[78%]">
           <h1 className="largo text-[2rem] font-extrabold leading-[1.02]">{camp.nome}</h1>
@@ -101,10 +93,10 @@ export function Publico({ slug }: { slug: string }) {
           {camp.data_inicio && <p className="text-sm text-white/75">{periodo(camp.data_inicio, camp.data_fim)}</p>}
           {camp.descricao && <p className="mt-3 text-sm text-white/85">{camp.descricao}</p>}
         </div>
-        <button onClick={compartilhar} className="absolute bottom-4 right-4 flex h-10 items-center gap-2 rounded-full bg-tinta/85 px-4 text-sm font-semibold backdrop-blur">
+        <button onClick={compartilhar} className="relative mt-5 flex h-10 items-center gap-2 rounded-full bg-white px-4 text-sm font-bold text-mar transition active:scale-95">
           <Share2 size={16} /> Compartilhar
         </button>
-      </header>
+      </header>}
 
       <div className="sticky top-0 z-10 space-y-2 border-b border-linha bg-cartao/95 px-3 pt-1 pb-2.5 backdrop-blur">
         <Abas abas={abas} atual={aba} mudar={(a) => mudar('aba', a)} />
@@ -128,11 +120,23 @@ export function Publico({ slug }: { slug: string }) {
 
       <div className="px-3 pt-4">
         {aba === 'jogos' && <Jogos base={base} cat={cat} slug={camp.slug} />}
-        {aba === 'tabela' && <Tabela base={base} cat={cat ?? categorias[0]} />}
-        {aba === 'chave' && <Chave base={base} cat={cat ?? categorias[0]} slug={camp.slug} />}
+        {aba === 'tabela' && <Tabela base={base} cat={cat ?? categorias[0]} seguir />}
+        {aba === 'chave' && <Chave base={tudo} cat={cat ?? categorias[0]} camp={camp} />}
         {aba === 'atletas' && <Atletas base={base} cat={cat} />}
+        {aba === 'torneio' && tema?.cartaz && (
+          <div className="space-y-3">
+            <img src={tema.cartaz} alt={`Cartaz do ${camp.nome}`} className="w-full rounded-2xl" />
+            {camp.descricao && <p className="px-1 text-sm text-cinza">{camp.descricao}</p>}
+          </div>
+        )}
+        <Instalar camp={camp} />
+        <Patrocinadores lista={tudo.patrocinadores} />
+        <div className="mt-6 text-center">
+          <Link href={`/c/${camp.slug}/telao`} className="inline-flex items-center gap-2 text-sm font-semibold text-mar"><Tv size={16} /> Abrir no telão</Link>
+        </div>
       </div>
-      <Rodape />
+      <Compartilhar camp={camp} aberta={compartilhando} fechar={() => setCompartilhando(false)} />
+      <CreditoVetor />
     </div>
   )
 }
@@ -148,6 +152,7 @@ function Chip({ ativo, ...p }: { ativo: boolean } & React.ButtonHTMLAttributes<H
 
 function Jogos({ base, cat, slug }: { base: Base; cat?: Categoria; slug: string }) {
   const [quadra, setQuadra] = useState('')
+  const { ids: seguindo } = useSeguidos()
   const todos = base.jogos.filter((j) => (!cat || j.categoria_id === cat.id))
   const quadras = [...new Set(todos.map((j) => j.quadra).filter(Boolean))].sort() as string[]
   const jogos = todos.filter((j) => !quadra || j.quadra === quadra)
@@ -158,6 +163,7 @@ function Jogos({ base, cat, slug }: { base: Base; cat?: Categoria; slug: string 
   const fim = jogos.filter((j) => j.status === 'encerrado').sort((x, y) => -ordem(x, y))
   const varias = base.categorias.length > 1 && !cat
 
+  const seguidos = jogos.filter((j) => j.status !== 'encerrado' && [j.time_a, j.time_b].some((t) => seguindo.includes(t ?? '')))
   if (!todos.length) return <Vazio>A tabela de jogos ainda não saiu.</Vazio>
   const lista = (titulo: string, js: Jogo[]) =>
     js.length > 0 && (
@@ -180,6 +186,8 @@ function Jogos({ base, cat, slug }: { base: Base; cat?: Categoria; slug: string 
           ))}
         </div>
       )}
+      {!quadra && <Quadras base={{ ...base, jogos: todos }} slug={slug} />}
+      {lista('Suas duplas', seguidos.sort(ordem))}
       {lista('Agora', vivos)}
       {lista('Próximos', proximos)}
       {lista('Resultados', fim)}
@@ -187,7 +195,7 @@ function Jogos({ base, cat, slug }: { base: Base; cat?: Categoria; slug: string 
   )
 }
 
-export function Tabela({ base, cat }: { base: Base; cat: Categoria }) {
+export function Tabela({ base, cat, seguir }: { base: Base; cat: Categoria; seguir?: boolean }) {
   const times = base.times.filter((t) => t.categoria_id === cat.id)
   const jogos = base.jogos.filter((j) => j.categoria_id === cat.id && j.fase === 'grupo')
   const grupos = gruposDa(times)
@@ -220,7 +228,12 @@ export function Tabela({ base, cat }: { base: Base; cat: Categoria }) {
                         {l.posicao}
                       </span>
                     </td>
-                    <td className="max-w-0 truncate py-2.5 pr-2 font-semibold">{l.time.nome}</td>
+                    <td className="max-w-0 py-1 pr-1">
+                      <div className="flex items-center">
+                        <span className="min-w-0 flex-1 truncate font-semibold">{l.time.nome}</span>
+                        {seguir && <BotaoSeguir time={l.time} pequeno />}
+                      </div>
+                    </td>
                     <td className="text-center text-cinza">{l.jogos}</td>
                     <td className="text-center text-cinza">{l.vitorias}</td>
                     <td className="text-center text-cinza">{sinal(saldoSets(l))}</td>
@@ -244,7 +257,8 @@ export function Tabela({ base, cat }: { base: Base; cat: Categoria }) {
 
 const sinal = (n: number) => (n > 0 ? `+${n}` : String(n))
 
-function Chave({ base, cat, slug }: { base: Base; cat: Categoria; slug: string }) {
+function Chave({ base, cat, camp }: { base: Base & { patrocinadores: import('../lib/motor').Patrocinador[] }; cat: Categoria; camp: Campeonato }) {
+  const slug = camp.slug
   const jogos = base.jogos.filter((j) => j.categoria_id === cat.id && j.fase !== 'grupo')
   const fases = fasesMata(jogos)
   if (!jogos.length) return <Vazio>A chave do mata-mata ainda não saiu.</Vazio>
@@ -255,8 +269,11 @@ function Chave({ base, cat, slug }: { base: Base; cat: Categoria; slug: string }
     <div className="space-y-6">
       {campeao && (
         <div className="rounded-2xl bg-sol px-4 py-5 text-center">
-          <div className="text-xs font-bold uppercase tracking-[0.2em]">Campeão · {cat.nome}</div>
-          <div className="estreito mt-1 text-3xl font-extrabold">{campeao.nome}</div>
+          <div className="text-sm font-bold">Campeão, {cat.nome}</div>
+          <div className="largo mt-1 text-3xl font-extrabold">{campeao.nome}</div>
+          <div className="mx-auto mt-4 max-w-xs">
+            <BotaoArte camp={camp} base={base} arte={{ tipo: 'campeao', time: campeao, categoria: cat.nome }} rotulo="Imagem do campeão para o Instagram" />
+          </div>
         </div>
       )}
       {fases.map((f) => (
@@ -277,7 +294,7 @@ function Chave({ base, cat, slug }: { base: Base; cat: Categoria; slug: string }
 }
 
 function Atletas({ base, cat }: { base: Base; cat?: Categoria }) {
-  const [stats, setStats] = useState<Map<string, { pontos: number; erros: number }> | null>(null)
+  const [stats, setStats] = useState<Map<string, { pontos: number; erros: number; ataques: number; bloqueios: number; aces: number }> | null>(null)
   const atletas = useMemo(() => {
     const times = new Set(base.times.filter((t) => !cat || t.categoria_id === cat.id).map((t) => t.id))
     return base.atletas.filter((a) => times.has(a.time_id))
@@ -288,7 +305,7 @@ function Atletas({ base, cat }: { base: Base; cat?: Categoria }) {
   }, [atletas, placarTotal])
   if (!stats) return <Carregando />
   const linhas = atletas
-    .map((a) => ({ a, t: base.times.find((t) => t.id === a.time_id), ...(stats.get(a.id) ?? { pontos: 0, erros: 0 }) }))
+    .map((a) => ({ a, t: base.times.find((t) => t.id === a.time_id), ...(stats.get(a.id) ?? { pontos: 0, erros: 0, ataques: 0, bloqueios: 0, aces: 0 }) }))
     .sort((x, y) => y.pontos - x.pontos || x.erros - y.erros || x.a.nome.localeCompare(y.a.nome))
   if (!linhas.some((l) => l.pontos || l.erros)) return <Vazio>Os pontos dos atletas aparecem aqui assim que os jogos começarem.</Vazio>
   return (
@@ -308,7 +325,9 @@ function Atletas({ base, cat }: { base: Base; cat?: Categoria }) {
               <td className="placar py-2.5 pl-4 text-base text-cinza">{i + 1}</td>
               <td className="max-w-0 py-2.5 pr-2">
                 <div className="truncate font-semibold">{l.a.nome}</div>
-                <div className="truncate text-xs text-cinza">{l.t?.nome}</div>
+                <div className="truncate text-xs text-cinza">
+                  {[l.t?.nome, l.ataques && `${l.ataques} ataque${l.ataques > 1 ? 's' : ''}`, l.bloqueios && `${l.bloqueios} bloqueio${l.bloqueios > 1 ? 's' : ''}`, l.aces && `${l.aces} ace${l.aces > 1 ? 's' : ''}`].filter(Boolean).join(', ')}
+                </div>
               </td>
               <td className="placar text-center text-xl">{l.pontos}</td>
               <td className="pr-4 text-center text-cinza">{l.erros}</td>

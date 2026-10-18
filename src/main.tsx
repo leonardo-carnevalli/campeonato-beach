@@ -5,6 +5,7 @@ import './index.css'
 import { Avisos, Vazio } from './ui/ui'
 import { Inicio, Publico } from './publico/Publico'
 import { JogoPublico } from './publico/JogoPublico'
+import { Telao } from './publico/Telao'
 import { Marcar, MarcadorInicio, MarcadorJogos } from './marcador/Marcador'
 import { AdminInicio } from './admin/Admin'
 import { AdminCampeonato } from './admin/Campeonato'
@@ -14,6 +15,7 @@ createRoot(document.getElementById('root')!).render(
     <Switch>
       <Route path="/">{() => <Inicio />}</Route>
       <Route path="/c/:slug">{(p) => <Publico slug={p.slug} />}</Route>
+      <Route path="/c/:slug/telao">{(p) => <Telao slug={p.slug} />}</Route>
       <Route path="/c/:slug/jogo/:id">{(p) => <JogoPublico slug={p.slug} id={p.id} />}</Route>
       <Route path="/marcador">{() => <MarcadorInicio />}</Route>
       <Route path="/marcador/:camp">{(p) => <MarcadorJogos campId={p.camp} />}</Route>

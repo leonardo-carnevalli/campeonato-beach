@@ -14,6 +14,13 @@ Sistema web para campeonatos de beach vôlei em duplas ou quartetos. Ele é pens
 - **Marcador:** marca ponto a ponto com "Ponto" ou "Erro" de cada atleta. Um erro dá o ponto ao outro time. Também marca "+1 sem atleta". Dá para desfazer, corrigir ou apagar qualquer lance. O set fecha sozinho pela regra, avisa a troca de lado e pede confirmação para encerrar o jogo.
 - **Público:** mostra os jogos ao vivo, os próximos e os resultados, com filtro por quadra. Também mostra a classificação dos grupos, a chave, o campeão, o ranking de pontos dos atletas e o lance a lance de cada jogo. Tudo se atualiza sozinho (Supabase Realtime).
 
+- **Telão:** `/c/<campeonato>/telao`, para TV ou projetor. Mostra cada quadra ao vivo (ou o próximo jogo), com um brilho suave quando sai ponto. Na lateral passam a classificação, os próximos jogos, o mata-mata e os resultados. Tem relógio, QR Code e patrocinadores.
+- **Extras do público:** o que está rolando e o próximo jogo de cada quadra, seguir uma dupla (os jogos dela vão para o topo), imagem do resultado e do campeão para os stories do Instagram, QR Code e cartaz para imprimir, e instalação como app (PWA) no iPhone e no Android.
+- **Tipo do ponto (opcional):** ataque, bloqueio, ace e erro de saque. Cada botão já marca o ponto e entra no ranking dos atletas.
+- **Patrocinadores:** cadastrados na organização. Aparecem no público, no telão e nas imagens.
+
+**Página personalizada por cliente:** o visual de cada campeonato fica em `src/temas/` (ex.: `vixe.tsx` para o Torneio da Arena Vixe), com cores, topo, escudo e cartaz. A Vetor monta o tema a partir do material do cliente. Toda página termina com "Desenvolvido por Vetor Agência".
+
 **Classificação:** pontos, vitórias, saldo de sets, saldo de pontos, pontos feitos e confronto direto. A chave se preenche sozinha quando os grupos terminam (1º A x 2º B...).
 
 ## Rodar
@@ -39,3 +46,5 @@ O `.env` tem a URL e a chave pública (anon) do Supabase. Ela pode ficar no Git:
 - `src/lib/dados.ts`: Supabase, senhas da sessão e realtime
 - `src/publico`, `src/marcador`, `src/admin`: as três áreas
 - `scripts/demo.ts`: cria um campeonato de exemplo
+- `scripts/vixe.ts`: cria o Torneio de Vôlei da Arena Vixe com times simulados
+- `scripts/teste-realtime.mjs`: mede quanto tempo um ponto leva para chegar ao público

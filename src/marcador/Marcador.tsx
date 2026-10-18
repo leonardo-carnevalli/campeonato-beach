@@ -3,11 +3,13 @@ import { Link, useLocation } from 'wouter'
 import { ArrowLeftRight, List, MoreHorizontal, Undo2 } from 'lucide-react'
 import { rpc, sb, senha, useCampeonato, useLances } from '../lib/dados'
 import {
-  calcularPlacar, horaDeTrocar, outro, regrasDoJogo, setsDosLances,
-  type Atleta, type Campeonato, type Jogo, type Lado, type Lance,
+  NOME_FUNDAMENTO, calcularPlacar, horaDeTrocar, outro, regrasDoJogo, setsDosLances,
+  type Atleta, type Campeonato, type Fundamento, type Jogo, type Lado, type Lance,
 } from '../lib/motor'
 import { Botao, Carregando, Folha, Topo, Vazio, aviso, confirmar, cx, entrada } from '../ui/ui'
 import { CartaoJogo, ladosDoJogo, nomeDaFase } from '../ui/jogo'
+import { useTema } from '../temas'
+import { CreditoVetor } from '../ui/Vetor'
 
 export function MarcadorInicio() {
   const [lista, setLista] = useState<Campeonato[] | null>(null)
@@ -70,6 +72,7 @@ function useSenhaMarcador(campId: string) {
 export function MarcadorJogos({ campId }: { campId: string }) {
   const { ok, entrar } = useSenhaMarcador(campId)
   const { tudo } = useCampeonato({ id: campId })
+  useTema(tudo?.camp.slug)
   const [cat, setCat] = useState('')
   const [quadra, setQuadra] = useState('')
   if (!ok) return <EntrarComSenha titulo="Marcador" sub="Digite a senha do marcador deste campeonato." voltar="/marcador" entrar={entrar} />
@@ -114,6 +117,7 @@ export function MarcadorJogos({ campId }: { campId: string }) {
         {grupo('Próximos', jogos.filter((j) => j.status === 'agendado').sort(ord))}
         {grupo('Encerrados', jogos.filter((j) => j.status === 'encerrado').sort(ord).reverse())}
       </div>
+      <CreditoVetor links={false} />
     </div>
   )
 }
@@ -130,6 +134,7 @@ type Novo = Omit<Lance, 'id' | 'criado_em'> & { id: number; criado_em: string }
 
 function Mesa({ campId, id }: { campId: string; id: string }) {
   const { tudo, recarregar: recarregarTudo } = useCampeonato({ id: campId })
+  useTema(tudo?.camp.slug)
   const { lances, recarregar } = useLances(id)
   const [pendentes, setPendentes] = useState<Novo[]>([])
   const [removidos, setRemovidos] = useState<Set<number>>(new Set())
@@ -138,6 +143,13 @@ function Mesa({ campId, id }: { campId: string; id: string }) {
   const [menu, setMenu] = useState(false)
   const [editando, setEditando] = useState<Lance | null>(null)
   const [pulso, setPulso] = useState<Lado | null>(null)
+  const [comTipo, setComTipo] = useState(() => {
+    try { return localStorage.getItem('beach:tipo') !== 'nao' } catch { return true }
+  })
+  const mudarTipo = (v: boolean) => {
+    setComTipo(v)
+    try { localStorage.setItem('beach:tipo', v ? 'sim' : 'nao') } catch { /* sem armazenamento */ }
+  }
   const fila = useRef<Promise<unknown>>(Promise.resolve())
   const [, navegar] = useLocation()
   const s = senha.marcador(campId)
@@ -172,17 +184,17 @@ function Mesa({ campId, id }: { campId: string; id: string }) {
     })
   }
 
-  const marcar = (lado: Lado, tipo: Lance['tipo'], atleta: Atleta | null) => {
+  const marcar = (lado: Lado, tipo: Lance['tipo'], atleta: Atleta | null, fundamento: Fundamento | null = null) => {
     if (encerrado) return aviso('Jogo encerrado. Reabra no menu para corrigir.', true)
     if (p.vencedor) return aviso('Jogo decidido. Encerre ou desfaça o último ponto.', true)
     if (navigator.vibrate) navigator.vibrate(25)
-    const novo: Novo = { id: -Date.now() - Math.random(), jogo_id: id, set_num: n, lado, tipo, atleta_id: atleta?.id ?? null, criado_em: new Date().toISOString() }
+    const novo: Novo = { id: -Date.now() - Math.random(), jogo_id: id, set_num: n, lado, tipo, atleta_id: atleta?.id ?? null, fundamento, criado_em: new Date().toISOString() }
     setPendentes((ps) => [...ps, novo])
     setPulso(lado)
     setTimeout(() => setPulso(null), 260)
-    aviso(tipo === 'erro' ? `Erro de ${atleta?.nome} · ponto ${time[lado]?.nome}` : `Ponto ${atleta ? `de ${atleta.nome}` : time[lado]?.nome}`)
+    aviso(`${descr(novo)}${tipo === 'erro' ? `, ponto para ${time[lado]?.nome}` : ''}`)
     enfileirar(async () => {
-      await rpc('marcador_lance', { p_senha: s, p_jogo: id, p_set: novo.set_num, p_lado: lado, p_tipo: tipo, p_atleta: novo.atleta_id })
+      await rpc('marcador_lance', { p_senha: s, p_jogo: id, p_set: novo.set_num, p_lado: lado, p_tipo: tipo, p_atleta: novo.atleta_id, p_fundamento: fundamento })
       await recarregar()
       setPendentes((ps) => ps.filter((x) => x.id !== novo.id))
     })
@@ -220,9 +232,9 @@ function Mesa({ campId, id }: { campId: string; id: string }) {
 
   const lados: Lado[] = invertido ? ['b', 'a'] : ['a', 'b']
   const ultimo = mostrados[mostrados.length - 1]
-  const descr = (l: Pick<Lance, 'tipo' | 'lado' | 'atleta_id'>) =>
-    l.tipo === 'ponto' ? `Ponto de ${nomeAtleta(l.atleta_id) ?? time[l.lado]?.nome}`
-      : l.tipo === 'erro' ? `Erro de ${nomeAtleta(l.atleta_id) ?? '?'}`
+  const descr = (l: Pick<Lance, 'tipo' | 'lado' | 'atleta_id' | 'fundamento'>) =>
+    l.tipo === 'ponto' ? `${l.fundamento ? NOME_FUNDAMENTO[l.fundamento] : 'Ponto'} de ${nomeAtleta(l.atleta_id) ?? time[l.lado]?.nome}`
+      : l.tipo === 'erro' ? `${l.fundamento === 'saque' ? 'Erro de saque' : 'Erro'} de ${nomeAtleta(l.atleta_id) ?? '?'}`
       : `Ponto ${time[l.lado]?.nome ?? ''}`
 
   const parcialAte = (i: number) => {
@@ -333,6 +345,23 @@ function Mesa({ campId, id }: { campId: string; id: string }) {
                     Erro
                   </button>
                 </div>
+                {comTipo && (
+                  <div className="mt-1.5 grid grid-cols-2 gap-1">
+                    {(['ataque', 'bloqueio', 'ace', 'saque'] as Fundamento[]).map((f) => (
+                      <button
+                        key={f}
+                        disabled={encerrado}
+                        onClick={() => (f === 'saque' ? marcar(outro(l), 'erro', x, f) : marcar(l, 'ponto', x, f))}
+                        className={cx(
+                          'h-8 rounded-lg text-xs font-semibold transition active:scale-95 disabled:opacity-30',
+                          f === 'saque' ? 'border border-linha text-cinza' : l === 'a' ? 'bg-mar-claro text-mar' : 'bg-sol-claro text-tinta',
+                        )}
+                      >
+                        {f === 'saque' ? 'Erro de saque' : NOME_FUNDAMENTO[f]}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
             <button
@@ -381,6 +410,22 @@ function Mesa({ campId, id }: { campId: string; id: string }) {
       <Folha aberta={!!editando} fechar={() => setEditando(null)} titulo="Corrigir lance">
         {editando && (
           <div className="space-y-2">
+            {editando.tipo !== 'avulso' && editando.atleta_id && (
+              <div className="rounded-2xl bg-cartao p-3">
+                <div className="mb-2 text-sm font-bold">Tipo do ponto</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {[null, ...(editando.tipo === 'ponto' ? ['ataque', 'bloqueio', 'ace'] : ['saque'])].map((f) => (
+                    <Botao key={f ?? 'nenhum'} variante={(editando.fundamento ?? null) === f ? 'primario' : 'secundario'} className="h-9 text-sm"
+                      onClick={() => acao(async () => {
+                        await rpc('marcador_editar_lance', { p_senha: s, p_lance: editando.id, p_lado: editando.lado, p_tipo: editando.tipo, p_atleta: editando.atleta_id, p_fundamento: f })
+                        setEditando(null)
+                      }, 'Lance corrigido')}>
+                      {f ? (f === 'saque' ? 'Erro de saque' : NOME_FUNDAMENTO[f as Fundamento]) : 'Sem tipo'}
+                    </Botao>
+                  ))}
+                </div>
+              </div>
+            )}
             {(['a', 'b'] as Lado[]).map((l) => (
               <div key={l} className="rounded-2xl bg-cartao p-2">
                 <div className={cx('px-2 py-1 text-sm font-bold', l === 'a' ? 'text-mar' : 'text-tinta')}>{time[l]?.nome}</div>
@@ -410,15 +455,16 @@ function Mesa({ campId, id }: { campId: string; id: string }) {
         )}
       </Folha>
 
-      <MenuJogo aberto={menu} fechar={() => setMenu(false)} jogo={jogo} nomes={{ a: a?.nome, b: b?.nome }} senhaM={s}
+      <MenuJogo aberto={menu} fechar={() => setMenu(false)} jogo={jogo} nomes={{ a: a?.nome, b: b?.nome }} senhaM={s} comTipo={comTipo} mudarTipo={mudarTipo}
         depois={() => { recarregarTudo(); recarregar() }} status={status} sair={() => navegar(`/marcador/${campId}`)} />
     </div>
   )
 }
 
-function MenuJogo({ aberto, fechar, jogo, nomes, senhaM, depois, status }: {
+function MenuJogo({ aberto, fechar, jogo, nomes, senhaM, depois, status, comTipo, mudarTipo }: {
   aberto: boolean; fechar: () => void; jogo: Jogo; nomes: { a?: string; b?: string }; senhaM: string
   depois: () => void; status: (s: string) => void; sair?: () => void
+  comTipo?: boolean; mudarTipo?: (v: boolean) => void
 }) {
   const wo = async (v: Lado | null) => {
     if (v && !confirmar(`Dar vitória por W.O. para ${nomes[v]}? Os pontos marcados serão apagados.`)) return
@@ -434,6 +480,15 @@ function MenuJogo({ aberto, fechar, jogo, nomes, senhaM, depois, status }: {
   return (
     <Folha aberta={aberto} fechar={fechar} titulo="Jogo">
       <div className="space-y-2">
+        {mudarTipo && (
+          <label className="flex items-start gap-3 rounded-2xl bg-cartao p-3">
+            <input type="checkbox" className="mt-0.5 h-5 w-5" checked={!!comTipo} onChange={(e) => mudarTipo(e.target.checked)} />
+            <span>
+              <span className="block font-semibold">Mostrar tipo do ponto</span>
+              <span className="block text-sm text-cinza">Botões menores de ataque, bloqueio, ace e erro de saque. É opcional: cada um já marca o ponto e entra nas estatísticas dos atletas.</span>
+            </span>
+          </label>
+        )}
         {jogo.status === 'encerrado' && !jogo.wo && (
           <Botao variante="secundario" className="w-full" onClick={() => { status('ao_vivo'); fechar() }}>Reabrir para corrigir</Botao>
         )}

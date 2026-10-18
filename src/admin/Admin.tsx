@@ -6,6 +6,7 @@ import type { Campeonato } from '../lib/motor'
 import { Botao, Campo, Carregando, Folha, Topo, Vazio, aviso, entrada } from '../ui/ui'
 import { dataCurta } from '../ui/jogo'
 import { EntrarComSenha } from '../marcador/Marcador'
+import { CreditoVetor } from '../ui/Vetor'
 
 export function useAdmin() {
   const [ok, setOk] = useState(() => !!senha.admin())
@@ -51,6 +52,7 @@ export function AdminInicio() {
         ))}
       </div>
       <NovoCampeonato aberto={novo} fechar={() => setNovo(false)} />
+      <CreditoVetor links={false} />
     </div>
   )
 }

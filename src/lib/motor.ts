@@ -31,6 +31,9 @@ export interface Campeonato {
   data_fim: string | null
   descricao: string | null
   publicado: boolean
+  horario?: string | null
+  inscricao?: string | null
+  organizacao?: string | null
 }
 
 export interface Categoria {
@@ -89,7 +92,20 @@ export interface Lance {
   lado: Lado
   tipo: 'ponto' | 'erro' | 'avulso'
   atleta_id: string | null
+  fundamento?: Fundamento | null
   criado_em: string
+}
+
+export type Fundamento = 'ataque' | 'bloqueio' | 'ace' | 'saque'
+export const NOME_FUNDAMENTO: Record<Fundamento, string> = { ataque: 'Ataque', bloqueio: 'Bloqueio', ace: 'Ace', saque: 'Erro de saque' }
+
+export interface Patrocinador {
+  id: string
+  campeonato_id: string
+  nome: string
+  logo: string | null
+  link: string | null
+  ordem: number
 }
 
 export const REGRAS_PADRAO: Regras = {
@@ -483,4 +499,32 @@ export function rankingAtletas(atletas: Atleta[], times: Time[], lances: Lance[]
     if (l.tipo === 'erro') x.erros++
   }
   return [...m.values()].sort((p, q) => q.pontos - p.pontos || p.erros - q.erros || p.atleta.nome.localeCompare(q.atleta.nome))
+}
+
+// ---------- quadras ----------
+
+export interface Quadra {
+  quadra: string
+  agora: Jogo | undefined
+  proximo: Jogo | undefined
+}
+
+const porHorario = (x: Jogo, y: Jogo) =>
+  (x.horario ?? '9').localeCompare(y.horario ?? '9') || faseIdx(x.fase) - faseIdx(y.fase) || x.ordem - y.ordem
+
+// o que está rolando e o que vem a seguir em cada quadra
+export function quadrasDoDia(jogos: Jogo[]): Quadra[] {
+  const nomes = [...new Set(jogos.map((j) => j.quadra).filter((q): q is string => !!q))]
+    .sort((a, b) => a.localeCompare(b, 'pt-BR', { numeric: true }))
+  return nomes.map((q) => {
+    const daQuadra = jogos.filter((j) => j.quadra === q && !ehFolga(j))
+    const vivos = daQuadra.filter((j) => j.status === 'ao_vivo').sort(porHorario)
+    const fila = daQuadra.filter((j) => j.status === 'agendado').sort(porHorario)
+    return { quadra: q, agora: vivos[0], proximo: vivos.length > 1 ? vivos[1] : fila[0] }
+  })
+}
+
+// placar do set em andamento (0-0 logo depois que um set fecha)
+export function placarDoSetAtual(p: Placar): [number, number] {
+  return p.sets[p.setAtual - 1] ?? [0, 0]
 }

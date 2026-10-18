@@ -1,18 +1,22 @@
 import { useLances, useCampeonato } from '../lib/dados'
-import { calcularPlacar, regrasDoJogo, type Lado } from '../lib/motor'
+import { NOME_FUNDAMENTO, calcularPlacar, placarDoSetAtual, regrasDoJogo, type Lado } from '../lib/motor'
+import { BotaoArte, BotaoSeguir } from './extras'
+import { useTema } from '../temas'
+import { CreditoVetor } from '../ui/Vetor'
 import { AoVivo, Carregando, Topo, Vazio, cx } from '../ui/ui'
 import { hora, ladosDoJogo, nomeDaFase } from '../ui/jogo'
 
 export function JogoPublico({ slug, id }: { slug: string; id: string }) {
   const { tudo } = useCampeonato({ slug })
   const { lances } = useLances(id)
+  useTema(slug)
   if (tudo === undefined) return <Carregando />
   const jogo = tudo?.jogos.find((j) => j.id === id)
   if (!tudo || !jogo) return <div className="p-6"><Vazio>Jogo não encontrado.</Vazio></div>
 
   const { cat, a, b, rotuloA, rotuloB } = ladosDoJogo(jogo, tudo)
   const p = calcularPlacar(regrasDoJogo(cat, jogo.fase), jogo.sets)
-  const atual = jogo.sets[jogo.sets.length - 1] ?? [0, 0]
+  const atual = placarDoSetAtual(p)
   const nomeAtleta = (aid: string | null) => tudo.atletas.find((x) => x.id === aid)?.nome
   const atletasDe = (tid?: string) => tudo.atletas.filter((x) => x.time_id === tid)
 
@@ -25,7 +29,7 @@ export function JogoPublico({ slug, id }: { slug: string; id: string }) {
           {t?.nome ?? (l === 'a' ? rotuloA : rotuloB)}
         </div>
         <div className={cx('placar mt-2 text-7xl', venceu && 'text-sol')}>{l === 'a' ? p.setsA : p.setsB}</div>
-        <div className="mt-1 text-xs uppercase tracking-wide text-white/60">sets</div>
+        <div className="mt-1 text-xs text-white/60">sets</div>
       </div>
     )
   }
@@ -40,10 +44,10 @@ export function JogoPublico({ slug, id }: { slug: string; id: string }) {
   return (
     <div className="mx-auto max-w-3xl pb-16">
       <Topo titulo={`${cat.nome} · ${nomeDaFase(jogo)}`} sub={[jogo.quadra && `Quadra ${jogo.quadra}`, hora(jogo.horario)].filter(Boolean).join(' · ')} voltar={`/c/${slug}`} />
-      <div className="bg-tinta px-4 pb-6 pt-5 text-white">
+      <div className="bg-mar px-4 pb-6 pt-5 text-white">
         <div className="mb-4 flex justify-center">
           {jogo.status === 'ao_vivo' ? <AoVivo /> : (
-            <span className="text-xs font-semibold uppercase tracking-wide text-white/60">
+            <span className="text-sm font-semibold text-white/70">
               {jogo.status === 'encerrado' ? `Encerrado${jogo.wo ? ' · W.O.' : ''}` : 'Ainda não começou'}
             </span>
           )}
@@ -55,10 +59,10 @@ export function JogoPublico({ slug, id }: { slug: string; id: string }) {
         </div>
         {jogo.status === 'ao_vivo' && (
           <div className="mx-auto mt-5 flex w-fit items-center gap-4 rounded-2xl bg-white/10 px-5 py-3">
-            <span className="text-xs uppercase tracking-wide text-white/60">{p.setAtual}º set</span>
-            <span className="placar text-4xl">{atual[0]}</span>
+            <span className="text-sm text-white/60">{p.setAtual}º set</span>
+            <span key={`a${atual[0]}`} className="placar vira text-4xl">{atual[0]}</span>
             <span className="text-white/40">–</span>
-            <span className="placar text-4xl">{atual[1]}</span>
+            <span key={`b${atual[1]}`} className="placar vira text-4xl">{atual[1]}</span>
           </div>
         )}
         {jogo.sets.length > 0 && (
@@ -73,11 +77,17 @@ export function JogoPublico({ slug, id }: { slug: string; id: string }) {
       </div>
 
       <div className="space-y-5 px-3 pt-5">
+        {jogo.status === 'encerrado' && a && b && (
+          <BotaoArte camp={tudo.camp} base={tudo} arte={{ tipo: 'resultado', jogo }} rotulo="Imagem do resultado para o Instagram" />
+        )}
         {(a || b) && (
           <section className="grid grid-cols-2 gap-2">
             {[a, b].map((t, i) => (
               <div key={i} className="rounded-2xl bg-cartao p-3">
-                <div className="mb-2 truncate text-sm font-bold">{t?.nome}</div>
+                <div className="mb-1 flex items-center gap-1">
+                  <span className="min-w-0 flex-1 truncate text-sm font-bold">{t?.nome}</span>
+                  <BotaoSeguir time={t} pequeno />
+                </div>
                 {estat(t?.id).map(({ x, pontos, erros }) => (
                   <div key={x.id} className="flex items-baseline gap-2 py-1 text-sm">
                     <span className="min-w-0 flex-1 truncate">{x.nome}</span>
@@ -102,12 +112,12 @@ export function JogoPublico({ slug, id }: { slug: string; id: string }) {
                 const novoSet = i === 0 || arr[i - 1].set_num !== l.set_num
                 return (
                   <div key={l.id}>
-                    {novoSet && <div className="bg-areia px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-cinza">{l.set_num}º set</div>}
+                    {novoSet && <div className="bg-areia px-4 py-1.5 text-xs font-bold text-cinza">{l.set_num}º set</div>}
                     <div className="flex items-center gap-3 border-t border-linha px-4 py-2 text-sm first:border-0">
                       <span className={cx('h-2 w-2 shrink-0 rounded-full', l.lado === 'a' ? 'bg-mar' : 'bg-sol')} />
                       <span className="min-w-0 flex-1 truncate">
-                        {l.tipo === 'ponto' && <>Ponto de <b>{nomeAtleta(l.atleta_id) ?? quem}</b></>}
-                        {l.tipo === 'erro' && <>Erro de <b>{nomeAtleta(l.atleta_id) ?? 'adversário'}</b> · ponto {quem}</>}
+                        {l.tipo === 'ponto' && <>{l.fundamento ? NOME_FUNDAMENTO[l.fundamento] : 'Ponto'} de <b>{nomeAtleta(l.atleta_id) ?? quem}</b></>}
+                        {l.tipo === 'erro' && <>{l.fundamento === 'saque' ? 'Erro de saque' : 'Erro'} de <b>{nomeAtleta(l.atleta_id) ?? 'adversário'}</b> · ponto {quem}</>}
                         {l.tipo === 'avulso' && <>Ponto <b>{quem}</b></>}
                       </span>
                       <span className="placar text-base text-cinza">{pa}-{pb}</span>
@@ -119,6 +129,7 @@ export function JogoPublico({ slug, id }: { slug: string; id: string }) {
           </section>
         )}
       </div>
+      <CreditoVetor links={false} />
     </div>
   )
 }

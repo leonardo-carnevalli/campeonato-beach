@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { useCallback, useEffect, useState } from 'react'
-import type { Atleta, Campeonato, Categoria, Jogo, Lance, Time } from './motor'
+import type { Atleta, Campeonato, Categoria, Jogo, Lance, Patrocinador, Time } from './motor'
 
 export const sb = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY, {
   auth: { persistSession: false },
@@ -38,6 +38,7 @@ export interface Tudo {
   times: Time[]
   atletas: Atleta[]
   jogos: Jogo[]
+  patrocinadores: Patrocinador[]
 }
 
 async function lista<T>(q: PromiseLike<{ data: T[] | null; error: { message: string } | null }>): Promise<T[]> {
@@ -59,14 +60,15 @@ export async function carregar(filtro: { slug?: string; id?: string }, viaAdmin 
   if (!camp) return null
   const categorias = await lista<Categoria>(sb.from('categorias').select('*').eq('campeonato_id', camp.id).order('ordem').order('criado_em'))
   const ids = categorias.map((c) => c.id)
-  const [times, jogos] = await Promise.all([
+  const [times, jogos, patrocinadores] = await Promise.all([
     lista<Time>(sb.from('times').select('*').in('categoria_id', ids).order('criado_em')),
     lista<Jogo>(sb.from('jogos').select('*').in('categoria_id', ids).order('ordem')),
+    lista<Patrocinador>(sb.from('patrocinadores').select('*').eq('campeonato_id', camp.id).order('ordem').order('criado_em')),
   ])
   const atletas = times.length
     ? await lista<Atleta>(sb.from('atletas').select('*').in('time_id', times.map((t) => t.id)).order('ordem'))
     : []
-  return { camp, categorias, times, atletas, jogos }
+  return { camp, categorias, times, atletas, jogos, patrocinadores }
 }
 
 // Mantém o campeonato atualizado: jogos chegam pelo realtime; o resto recarrega ao voltar para a aba.
@@ -140,7 +142,36 @@ export function useLances(jogoId: string | undefined) {
 
 export async function estatisticas(atletaIds: string[]) {
   if (!atletaIds.length) return []
-  return lista<{ atleta_id: string; pontos: number; erros: number }>(
+  return lista<{ atleta_id: string; pontos: number; erros: number; ataques: number; bloqueios: number; aces: number }>(
     sb.from('estatisticas_atletas').select('*').in('atleta_id', atletaIds),
   )
+}
+
+// duplas que a pessoa segue (só neste aparelho)
+const SEGUIDOS = 'beach:seguindo'
+function lerSeguidos(): string[] {
+  try {
+    return JSON.parse(localStorage.getItem(SEGUIDOS) ?? '[]')
+  } catch {
+    return []
+  }
+}
+export function useSeguidos() {
+  const [ids, setIds] = useState<string[]>(lerSeguidos)
+  useEffect(() => {
+    const ouvir = () => setIds(lerSeguidos())
+    window.addEventListener('beach:seguindo', ouvir)
+    return () => window.removeEventListener('beach:seguindo', ouvir)
+  }, [])
+  const alternar = (id: string) => {
+    const atual = lerSeguidos()
+    const novo = atual.includes(id) ? atual.filter((x) => x !== id) : [...atual, id]
+    try {
+      localStorage.setItem(SEGUIDOS, JSON.stringify(novo))
+    } catch { /* navegador sem armazenamento */ }
+    setIds(novo)
+    window.dispatchEvent(new Event('beach:seguindo'))
+    return !atual.includes(id)
+  }
+  return { ids, segue: (id?: string) => !!id && ids.includes(id), alternar }
 }
