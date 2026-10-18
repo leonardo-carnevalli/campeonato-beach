@@ -1,0 +1,7 @@
+node_modules
+dist
+.segredos
+.env.local
+.vercel
+supabase/.temp
+public/_*.html

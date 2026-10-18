@@ -1,0 +1,92 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/archivo/wdth.css';
+
+@theme {
+  --font-sans: 'Archivo Variable', system-ui, sans-serif;
+  --color-areia: #edf1f7;
+  --color-cartao: #ffffff;
+  --color-tinta: #0a1a3f;
+  --color-cinza: #56627a;
+  --color-linha: #d9e0ec;
+  --color-mar: #0b48c9;
+  --color-mar-escuro: #082f8a;
+  --color-mar-claro: #e4ecfd;
+  --color-sol: #ffd21f;
+  --color-sol-claro: #fff5c7;
+  --color-vivo: #e5303b;
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+  background: var(--color-areia);
+}
+body {
+  margin: 0;
+  background: var(--color-areia);
+  color: var(--color-tinta);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+}
+:focus-visible {
+  outline: 3px solid var(--color-sol);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pulso, .sobe, .estoura { animation: none }
+}
+
+/* números do placar: estreitos e pesados, lidos de longe no sol */
+.placar {
+  font-stretch: 72%;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+.largo {
+  font-stretch: 116%;
+  letter-spacing: -0.015em;
+}
+.estreito {
+  font-stretch: 82%;
+}
+
+.sem-barra::-webkit-scrollbar {
+  display: none;
+}
+.sem-barra {
+  scrollbar-width: none;
+}
+
+@keyframes pulso {
+  0%, 100% { opacity: 1 }
+  50% { opacity: 0.35 }
+}
+.pulso {
+  animation: pulso 1.4s ease-in-out infinite;
+}
+
+@keyframes sobe {
+  from { transform: translateY(12px); opacity: 0 }
+  to { transform: none; opacity: 1 }
+}
+.sobe {
+  animation: sobe 0.18s ease-out;
+}
+
+@keyframes estoura {
+  0% { transform: scale(1) }
+  40% { transform: scale(1.12) }
+  100% { transform: scale(1) }
+}
+.estoura {
+  animation: estoura 0.25s ease-out;
+}
+
+@layer base {
+  input, select, textarea, button {
+    font: inherit;
+    color: inherit;
+  }
+}
