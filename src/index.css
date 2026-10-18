@@ -167,3 +167,12 @@ body {
 .telao-fundo {
   isolation: isolate;
 }
+
+/* telão: resultados correndo na faixa de baixo */
+@keyframes telao-corre {
+  from { transform: translateX(0) }
+  to { transform: translateX(-50%) }
+}
+.telao-corre {
+  animation: telao-corre 40s linear infinite;
+}

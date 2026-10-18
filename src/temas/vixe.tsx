@@ -29,6 +29,13 @@ export const vixe: Tema = {
   logo: '/torneios/arena-vixe-escudo.png',
   cartaz: '/torneios/arena-vixe-cartaz.jpg',
   arte: { fundo: NOITE, destaque: AMARELO },
+  titulo: { className: 'italic font-black', style: { fontStretch: '72%' } },
+  FundoTelao: () => (
+    <>
+      <Pincelada cor={VERDE} className="absolute -left-[6em] top-[1.5em] h-[5em] w-[30em] -rotate-[16deg] opacity-90" />
+      <Pincelada cor={AMARELO} className="absolute -right-[6em] top-[0.2em] h-[3em] w-[30em] rotate-[8deg] opacity-70" />
+    </>
+  ),
   Topo: ({ camp, categorias, compartilhar }) => (
     <header className="relative overflow-hidden px-5 pb-7 pt-6 text-white" style={{ background: NOITE }}>
       {/* pinceladas do cartaz */}

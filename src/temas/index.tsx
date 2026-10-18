@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, type CSSProperties, type ReactNode } from 'react'
 import type { Campeonato, Categoria } from '../lib/motor'
 import { vixe } from './vixe'
 
@@ -10,6 +10,10 @@ export interface Tema {
   // fundo e destaque das imagens para o Instagram
   arte?: { fundo: string; destaque: string }
   Topo?: (p: { camp: Campeonato; categorias: Categoria[]; compartilhar: () => void }) => ReactNode
+  // letra dos títulos no telão
+  titulo?: { className?: string; style?: CSSProperties }
+  // enfeite de fundo do telão, atrás de tudo
+  FundoTelao?: () => ReactNode
 }
 
 export const TEMAS: Record<string, Tema> = {
