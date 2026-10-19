@@ -1,6 +1,6 @@
-import { StrictMode } from 'react'
+import { StrictMode, type ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { Route, Switch } from 'wouter'
+import { Redirect, Route, Switch } from 'wouter'
 import './index.css'
 import { Avisos, Vazio } from './ui/ui'
 import { Inicio, Publico } from './publico/Publico'
@@ -9,14 +9,18 @@ import { Telao } from './publico/Telao'
 import { Marcar, MarcadorInicio, MarcadorJogos } from './marcador/Marcador'
 import { AdminInicio } from './admin/Admin'
 import { AdminCampeonato } from './admin/Campeonato'
+import { campeonatoDoDominio } from './temas'
+
+const fixo = campeonatoDoDominio()
+const soDoDominio = (slug: string, tela: ReactNode) => (fixo && slug !== fixo ? <Redirect to={`/c/${fixo}`} replace /> : tela)
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <Switch>
-      <Route path="/">{() => <Inicio />}</Route>
-      <Route path="/c/:slug">{(p) => <Publico slug={p.slug} />}</Route>
-      <Route path="/c/:slug/telao">{(p) => <Telao slug={p.slug} />}</Route>
-      <Route path="/c/:slug/jogo/:id">{(p) => <JogoPublico slug={p.slug} id={p.id} />}</Route>
+      <Route path="/">{() => (fixo ? <Redirect to={`/c/${fixo}`} replace /> : <Inicio />)}</Route>
+      <Route path="/c/:slug">{(p) => soDoDominio(p.slug, <Publico slug={p.slug} />)}</Route>
+      <Route path="/c/:slug/telao">{(p) => soDoDominio(p.slug, <Telao slug={p.slug} />)}</Route>
+      <Route path="/c/:slug/jogo/:id">{(p) => soDoDominio(p.slug, <JogoPublico slug={p.slug} id={p.id} />)}</Route>
       <Route path="/marcador">{() => <MarcadorInicio />}</Route>
       <Route path="/marcador/:camp">{(p) => <MarcadorJogos campId={p.camp} />}</Route>
       <Route path="/marcador/:camp/jogo/:id">{(p) => <Marcar campId={p.camp} id={p.id} />}</Route>

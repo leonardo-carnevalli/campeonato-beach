@@ -22,6 +22,13 @@ export const TEMAS: Record<string, Tema> = {
 
 export const temaDe = (slug?: string): Tema | undefined => (slug ? TEMAS[slug] : undefined)
 
+// subdomínio próprio: <sub>.vetoragencia.com.br mostra só aquele campeonato
+const DOMINIOS: Record<string, string> = {
+  arenavixe: 'arena-vixe',
+}
+
+export const campeonatoDoDominio = (): string | undefined => DOMINIOS[location.hostname.split('.')[0]]
+
 // aplica as cores do cliente na página inteira (inclusive nas folhas que abrem por cima)
 export function useTema(slug?: string) {
   const tema = temaDe(slug)
